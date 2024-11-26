@@ -2,9 +2,7 @@ import unittest
 import numpy as np
 
 def generate_random_data(mean: int, variance: int, num_samples: int) -> np.ndarray:
-    """Generate random threat score data for a department."""
     if variance == 0:
-        # Handle case where variance is zero
         data = np.full(num_samples, mean)
     else:
         data = np.random.randint(max(mean - variance, 0), min(mean + variance + 1, 90), num_samples)
@@ -13,16 +11,15 @@ def generate_random_data(mean: int, variance: int, num_samples: int) -> np.ndarr
 
 
 def calculate_aggregated_threat_score(data: list) -> float:
-    """
-    Calculate the aggregated threat score for multiple departments.
-    """
     total_score = 0
     total_users = 0
 
     for dept in data:
         dept_mean_score = np.mean(dept['scores'])
-        # Subtle amplification for high scores
-        adjusted_mean_score = dept_mean_score ** 1.1 if dept_mean_score > 45 else dept_mean_score
+        if dept_mean_score > 45:
+            adjusted_mean_score = dept_mean_score ** (1 + (dept_mean_score - 45) / 30)
+        else:
+            adjusted_mean_score = dept_mean_score
         total_score += adjusted_mean_score * len(dept['scores'])
         total_users += len(dept['scores'])
         print(f"Department mean score: {dept_mean_score}, Adjusted Mean: {adjusted_mean_score}, Users: {len(dept['scores'])}")
@@ -37,20 +34,16 @@ class TestScoreCalculation(unittest.TestCase):
     def test_uniform_scores(self):
         """Test: All departments have quite same threat scores."""
         data = [
-            {'scores': generate_random_data(45, 5, 50)},
-            {'scores': generate_random_data(45, 5, 50)},
-            {'scores': generate_random_data(45, 5, 50)},
-            {'scores': generate_random_data(45, 5, 50)},
-            {'scores': generate_random_data(45, 5, 50)}
+            {'scores': generate_random_data(45, 5, 50)} for _ in range(5)
         ]
         result = calculate_aggregated_threat_score(data)
         print(f"Test result (Uniform Scores): {result}")
-        self.assertAlmostEqual(result, 45, delta=10)
+        self.assertAlmostEqual(result, 45, delta=5)
 
     def test_high_threat_department(self):
         """Test: One department has a high score, other low."""
         data = [
-            {'scores': generate_random_data(85, 5, 50)},  # High threat department
+            {'scores': generate_random_data(85, 5, 50)},
             {'scores': generate_random_data(30, 5, 50)},
             {'scores': generate_random_data(30, 5, 50)},
             {'scores': generate_random_data(30, 5, 50)},
@@ -65,7 +58,7 @@ class TestScoreCalculation(unittest.TestCase):
         data = [
             {'scores': generate_random_data(30, 5, 50)},
             {'scores': generate_random_data(30, 5, 50)},
-            {'scores': generate_random_data(90, 0, 10)},  # High individual user scores
+            {'scores': generate_random_data(90, 0, 10)},
             {'scores': generate_random_data(30, 5, 50)},
             {'scores': generate_random_data(30, 5, 50)},
         ]
@@ -76,11 +69,11 @@ class TestScoreCalculation(unittest.TestCase):
     def test_different_user_counts(self):
         """Test: All departments have a different number of users."""
         data = [
-            {'scores': generate_random_data(30, 5, 100)},  # Larger department
+            {'scores': generate_random_data(30, 5, 100)}, 
             {'scores': generate_random_data(30, 5, 50)},
-            {'scores': generate_random_data(30, 5, 25)},  # Smaller department
-            {'scores': generate_random_data(30, 5, 10)},  # Smallest department
-            {'scores': generate_random_data(30, 5, 75)},  # Medium-sized department
+            {'scores': generate_random_data(30, 5, 25)}, 
+            {'scores': generate_random_data(30, 5, 10)}, 
+            {'scores': generate_random_data(30, 5, 75)}, 
         ]
         result = calculate_aggregated_threat_score(data)
         print(f"Test result (Different User Counts): {result}")
