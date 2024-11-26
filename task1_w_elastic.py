@@ -7,9 +7,6 @@ from elasticsearch import Elasticsearch
 from elastic.elastic_utils import connect_to_elastic
 
 def fetch_data_from_elasticsearch(es, index_name):
-    """
-    Fetch all documents from the specified Elasticsearch index.
-    """
     query = {"query": {"match_all": {}}}
     response = es.search(index=index_name, body=query, size=10000)  # Fetch up to 10,000 documents
     data = response['hits']['hits']
@@ -24,29 +21,6 @@ def fetch_data_from_elasticsearch(es, index_name):
         structured_data[department].append(score)
     
     return structured_data
-
-'''def calculate_aggregated_threat_score(data):
-    total_score = 0
-    total_users = 0
-
-    for department, scores in data.items():
-        dept_mean_score = np.mean(scores)
-
-        # Amplify departments with extreme mean scores
-        if dept_mean_score > 45:
-            # Nonlinear amplification for high-scoring departments
-            adjusted_mean_score = min(90, dept_mean_score + 2 * (dept_mean_score - 45) ** 1.5)
-        else:
-            adjusted_mean_score = dept_mean_score
-
-        total_score += adjusted_mean_score * len(scores)
-        total_users += len(scores)
-        print(f"Department: {department}, Mean Score: {dept_mean_score}, Adjusted Mean: {adjusted_mean_score}, Users: {len(scores)}")
-
-    # Final aggregated score
-    aggregated_score = min(90, total_score / total_users) if total_users > 0 else 0
-    print(f"Total Score: {total_score}, Total Users: {total_users}, Aggregated Score: {aggregated_score}")
-    return aggregated_score'''
 
 def calculate_aggregated_threat_score(data: list) -> float:
     total_score = 0
@@ -67,15 +41,12 @@ def calculate_aggregated_threat_score(data: list) -> float:
     return aggregated_score
 
 
-
 class TestScoreCalculation(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        """Set up Elasticsearch connection."""
         cls.es = connect_to_elastic()
 
     def fetch_test_data(self, index_name):
-        """Fetch data from the specified Elasticsearch index."""
         query = {"query": {"match_all": {}}}
         response = self.es.search(index=index_name, body=query, size=10000)
         data = response['hits']['hits']
